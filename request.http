@@ -1,0 +1,21 @@
+POST http://localhost:8080/student
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john@doe2.com",
+  "dob": "1990-01-01"
+}
+
+###
+DELETE http://localhost:8080/student/1
+
+###
+PUT http://localhost:8080/student/1
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john@doe2.com",
+  "dob": "1990-01-03"
+}
