@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 
@@ -39,14 +40,23 @@ public class TodoService {
     }
 
     public Todo addNewTodo(Todo todo) {
-        //check if tags exist
-        todo.getTags().forEach(tag -> {
-            if (this.tagService.getTag(tag) == null) {
-                this.tagService.addNewTag(new Tag(tag));
+        Todo todo1;
+        if(todo.getTags() == null){
+            todo1 = new Todo(todo.getTitle(), todo.getDescription(), todo.getDueDate(), todo.getStatus());
+        }else{
+            for(String tag : todo.getTags()){
+                if(this.tagService.getTag(tag) == null){
+                    this.tagService.addNewTag(new Tag(tag));
+                }
             }
+            todo1 = new Todo(todo.getTitle(), todo.getDescription(), todo.getDueDate(), todo.getStatus(), todo.getTags());
+        }
+
+        todo.getTags().forEach(tag -> {
+            this.tagService.getTag(tag).addTodo(todo1);
         });
-        this.todos.add(todo);
-        return todo;
+        this.todos.add(todo1);
+        return todo1;
 
     }
 
@@ -77,7 +87,6 @@ public class TodoService {
                 if (this.tagService.getTag(tag2) == null) {
                     this.tagService.addNewTag(new Tag(tag2));
                 }
-                this.tagService.getTag(tag2).addTodo(todo1);
                 this.addTagToTodoById(todoId, tag2);
             }
         });
@@ -104,10 +113,21 @@ public class TodoService {
     }
 
     public Todo addTagToTodoById(String todoId, String tag) {
-        this.todos.stream().filter(todo1 -> todo1.getId().equals(todoId))
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Todo with id " + todoId + " does not exist"))
-                .addTag(tag);
+        Tag tagExist = tagService.getTag(tag);
+        if (tagExist == null) {
+            this.tagService.addNewTag(new Tag(tag));
+        }
+
+        this.todos = this.todos.stream().flatMap(todo1 -> {
+            if (todo1.getId().equals(todoId)) {
+                this.tagService.addTodoToTagById(tag, todo1);
+                todo1.addTag(tag);
+                return Stream.of(todo1);
+            }else{
+                return Stream.of(todo1);
+            }
+        }).collect(Collectors.toList());
+
 
         return this.getTodoById(todoId);
     }

@@ -45,7 +45,7 @@ public class TagService {
     }
 
     public List<Todo> getTodosOfTag(String tag) {
-        return this.tags.stream().filter(tag1 -> tag1.getName().equals(tag) || tag1.getName().equals(tag))
+        return this.tags.stream().filter(tag1 -> tag1.getName().equals(tag))
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Tag" + tag + " does not exist"))
                 .getTodos();

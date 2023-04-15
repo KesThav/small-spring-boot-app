@@ -1,11 +1,14 @@
 package com.spring.tag;
 
+import com.spring.tag.Tag;
 import com.spring.todo.Todo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+
+@io.swagger.v3.oas.annotations.tags.Tag(name = "tags")
 @RestController
 @RequestMapping(path = "tags")
 public class TagController {
