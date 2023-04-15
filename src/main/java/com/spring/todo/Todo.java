@@ -31,7 +31,8 @@ public class Todo {
         this.description = description;
         this.dueDate = dueDate;
         this.status = status;
-        this.tags = tags;
+        this.tags = new ArrayList<>(tags);
+        this.tags = new ArrayList<>(tags);
     }
 
     public Todo(String title, String description, String dueDate, statusEnum status) {

@@ -26,6 +26,11 @@ public class TodoController {
         return this.todoService.getTodos();
     }
 
+    @GetMapping("/{todoId}")
+    public Todo getTodoById(@PathVariable("todoId") String todoId) {
+        return this.todoService.getTodoById(todoId);
+    }
+
     @PostMapping
     public Todo addNewTodo(@RequestBody Todo todo) {
         Todo todo1;
@@ -57,7 +62,7 @@ public class TodoController {
     }
 
     @GetMapping("/{todoId}/tag")
-    public List<String> getTagOfTodoById(@PathVariable("todoId") String todoId) {
+    public List<String> getTagsOfTodoById(@PathVariable("todoId") String todoId) {
         return this.todoService.getTagOfTodoById(todoId);
     }
     @PostMapping("/{todoId}/tag")

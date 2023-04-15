@@ -33,7 +33,7 @@ public class TagController {
     }
 
     @GetMapping("/{tag}/todos")
-    public List<Todo> getTodosByTagId(@PathVariable("tag") String tag) {
+    public List<Todo> getTodosByTag(@PathVariable("tag") String tag) {
         return this.tagService.getTodosOfTag(tag);
     }
 

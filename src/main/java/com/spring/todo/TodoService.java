@@ -51,7 +51,12 @@ public class TodoService {
     }
 
     public Todo updateTodo(String todoId, Todo todo) {
+
         Todo todo1 = this.getTodoById(todoId);
+        todo1.setTitle(todo.getTitle());
+        todo1.setDescription(todo.getDescription());
+        todo1.setDueDate(todo.getDueDate());
+        todo1.setStatus(todo.getStatus());
         Set<String> tags1 = new HashSet<>(todo1.getTags());
         Set<String> tags2 = new HashSet<>(todo.getTags());
 
@@ -60,14 +65,15 @@ public class TodoService {
         }
 
         tags1.forEach(tag1 -> {
-            if (tags2.isEmpty() || !tags2.contains(tag1)) {
+            if (!tags2.contains(tag1)) {
                 this.tagService.getTag(tag1).removeTodo(todo1);
                 this.removeTagFromTodoById(todoId, tag1);
             }
         });
 
+
         tags2.forEach(tag2 -> {
-            if (tags1.isEmpty() || !tags1.contains(tag2)) {
+            if (!tags1.contains(tag2)) {
                 if (this.tagService.getTag(tag2) == null) {
                     this.tagService.addNewTag(new Tag(tag2));
                 }

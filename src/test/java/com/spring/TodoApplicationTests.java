@@ -1,102 +1,156 @@
 package com.spring;
 
-import com.spring.tag.Tag;
-import com.spring.tag.TagService;
+import com.spring.tag.TagController;
 import com.spring.todo.Todo;
 import com.spring.todo.TodoController;
-import com.spring.todo.TodoService;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-import org.springframework.test.web.servlet.MockMvc;
-import org.junit.jupiter.api.BeforeEach;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.web.bind.annotation.PathVariable;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
-
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringJUnitConfig
-@ContextConfiguration(classes=TodoApplication.class)
-@WebMvcTest(TodoController.class)
+@SpringBootTest(classes = TodoApplication.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class TodoApplicationTests {
+class TodoApplicationTests{
+
+	private final TodoController todoController;
+	private final TagController tagController;
 
 	@Autowired
-	private MockMvc mockMvc;
-
-	@MockBean
-	private TodoService todoService;
-
-	@MockBean
-	private TagService tagService;
-
-	@Autowired
-	public TodoApplicationTests(TodoService todoService, TagService tagService) {
-		this.todoService = todoService;
-		this.tagService = tagService;
-	}
-
-	@BeforeEach
-	void setUp() {
-		MockitoAnnotations.openMocks(this);
+	public TodoApplicationTests(TodoController todoController, TagController tagController) {
+		this.todoController = todoController;
+		this.tagController = tagController;
 	}
 
 	@Test
 	@Order(1)
-	public void testPostTodos() throws Exception {
-		List<Todo> todos = Arrays.asList(
-				new Todo("Todo1", "Description1", "2023-03-30", Todo.statusEnum.TODO,List.of("tag1", "tag2")),
-				new Todo("Todo2", "Description2", "2023-04-04", Todo.statusEnum.IN_PROGRESS)
-		);
-
-		mockMvc.perform(MockMvcRequestBuilders.post("/todos")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"title\":\"Todo1\",\"description\":\"Description1\",\"dueDate\":\"2023-03-30\",\"status\":\"TODO\",\"tags\":[\"tag1\",\"tag2\"]}"))
-				.andExpect(MockMvcResultMatchers.status().isOk())
-				.andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
-				.andExpect(MockMvcResultMatchers.jsonPath("$.title").value("Todo1"));
-
-		mockMvc.perform(MockMvcRequestBuilders.post("/todos")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"title\":\"Todo2\",\"description\":\"Description2\",\"dueDate\":\"2023-04-04\",\"status\":\"IN_PROGRESS\"}"))
-				.andExpect(MockMvcResultMatchers.status().isOk())
-				.andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
-				.andExpect(MockMvcResultMatchers.jsonPath("$.title").value("Todo2"));
+	void getTodos() {
+		todoController.getTodos();
+		assertEquals(0,todoController.getTodos().size() );
 	}
 
 	@Test
 	@Order(2)
-	public void testGetTodos() throws Exception {
-
-		mockMvc.perform(MockMvcRequestBuilders.get("/todos"))
-				.andExpect(MockMvcResultMatchers.status().isOk())
-				.andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
-				.andExpect(MockMvcResultMatchers.jsonPath("$[0].title").value("Todo1"))
-				.andExpect(MockMvcResultMatchers.jsonPath("$[0].tags").value(List.of("tag1", "tag2")))
-				.andExpect(MockMvcResultMatchers.jsonPath("$[1].title").value("Todo2"));
+	void getTags() {
+		tagController.getTags();
+		assertEquals(0,tagController.getTags().size() );
 	}
+
+	@Test
+	@Order(3)
+	void addNewTodo() {
+		todoController.addNewTodo(new Todo("todo1", "description of todo 1", "2020-12-12", Todo.statusEnum.TODO, List.of("tag1", "tag2")));
+		todoController.addNewTodo(new Todo("todo2", "description of todo 2", "2020-12-12", Todo.statusEnum.IN_PROGRESS));
+		assertEquals(2,todoController.getTodos().size());
+		assertEquals(2, todoController.getTodos().stream().mapToLong(todo1 -> todo1.getTags().size()).sum());
+		assertEquals(2,tagController.getTags().size());
+		assertEquals(1,tagController.getTodosByTag("tag1").size());
+		assertEquals(1,tagController.getTodosByTag("tag2").size());
+	}
+
+	@Test
+	@Order(4)
+	void getTodoById(){
+		Todo todo = todoController.getTodos().stream().filter(t -> t.getTitle().equals("todo1")).findFirst().orElse(null);
+
+		assertEquals("todo1", todoController.getTodoById(todo.getId()).getTitle());
+	}
+
+	@Test
+	@Order(5)
+	void updateTodo(){
+		List<Todo> todos = new ArrayList<>(todoController.getTodos()); // create a new list object
+		Optional<Todo> optionalTodo1 = todos.stream()
+				.filter(t -> t.getTitle().equals("todo1"))
+				.findFirst();
+		String todo1Id = optionalTodo1.map(Todo::getId).orElse(null);
+		assertNotNull(todo1Id);
+
+		Todo newTodo = new Todo("todo1 updated", "description of todo 1 updated", "2022-12-12", Todo.statusEnum.DONE, List.of("tag3"));
+
+		todoController.updateTodo(todo1Id, newTodo);
+
+		Todo updatedTodo = todoController.getTodoById(todo1Id);
+
+		assertEquals("todo1 updated", updatedTodo.getTitle());
+		assertEquals("description of todo 1 updated", updatedTodo.getDescription());
+		assertEquals("2022-12-12", updatedTodo.getDueDate());
+		assertEquals(Todo.statusEnum.DONE, updatedTodo.getStatus());
+		assertEquals(1, updatedTodo.getTags().size());
+		assertEquals(1,tagController.getTodosByTag("tag3").size() );
+		assertEquals(0,tagController.getTodosByTag("tag1").size() );
+		assertEquals(0,tagController.getTodosByTag("tag2").size() );
+	}
+
+	@Test
+	@Order(6)
+	void deleteTodo(){
+		String todo1Id = todoController.getTodos().stream()
+				.filter(t -> t.getTitle().equals("todo1 updated"))
+				.findFirst()
+				.orElse(null).getId();
+
+		todoController.deleteTodo(todo1Id);
+
+		assertEquals(1,todoController.getTodos().size());
+		assertEquals(3,tagController.getTags().size());
+		assertEquals(0,tagController.getTodosByTag("tag3").size() );
+	}
+
+	@Test
+	@Order(7)
+	void addTag() {
+		tagController.addNewTag("tag4");
+		assertEquals(4,tagController.getTags().size());
+	}
+
+
+	@Test
+	@Order(8)
+	void addTagOfTodobyId(){
+		Todo todo = todoController.getTodos().stream().filter(todo1 -> todo1.getTitle().equals("todo2")).findFirst().orElse(null);
+
+		todoController.addTagToTodoById(todo.getId(), "tag4");
+		todoController.addTagToTodoById(todo.getId(), "tag5");
+
+		assertEquals(2, todoController.getTagsOfTodoById(todo.getId()).size());
+	}
+
+	@Test
+	@Order(9)
+	void getTagOfTodobyId(){
+		Todo todo = todoController.getTodos().stream().filter(todo1 -> todo1.getTitle().equals("todo2")).findFirst().orElse(null);
+
+		assertEquals(2, todoController.getTagsOfTodoById(todo.getId()).size());
+	}
+
+	@Test
+	@Order(10)
+	void deleteTag(){
+		tagController.deleteTag("tag4");
+		assertEquals(4,tagController.getTags().size());
+		assertFalse(todoController.getTodos().stream()
+				.flatMap(todo -> todo.getTags().stream())
+				.anyMatch(tag -> tag.equals("tag4")));
+	}
+
+	@Test
+	@Order(11)
+	void TodoByTag(){
+		assertEquals(1,tagController.getTodosByTag("tag5").size());
+	}
+
+
+
 }
-
-
-
-
-
-
-
